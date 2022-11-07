@@ -99,7 +99,7 @@ def main():
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     print(f"binding socket on {SOCK_IP}:{SOCK_PORT}")
     serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    serversocket.bind(("", SOCK_PORT))
+    serversocket.bind((SOCK_IP, SOCK_PORT))
     serversocket.listen(3)
 
     while True:
