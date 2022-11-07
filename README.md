@@ -3,6 +3,7 @@ An encrypted voice chat app, written in Python, that uses websockets to send dat
 
 # Setup
 - install python-sounddevice `python3 -m pip install sounddevice --user`
+- if you got problems in google VM  with sounddevide library saying "portaudio" error use this code `sudo apt-get install libportaudio2`
 - install numpy `pip install numpy`
 - install `pip install pycryptodome` instead of crypto
 
