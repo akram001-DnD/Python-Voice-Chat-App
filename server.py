@@ -3,8 +3,8 @@ from threading import Thread, Lock, Condition
 import pickle
 import socket
 
-# SOCK_IP = '10.128.0.2'  # internal IP  of the server
-SOCK_IP = '192.168.1.42'  # internal IP  of the server
+SOCK_IP = '10.128.0.2'  # internal IP  of the server
+# SOCK_IP = '192.168.1.42'  # internal IP  of the server
 SOCK_PORT = 9001
 
 
@@ -99,7 +99,7 @@ def main():
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     print(f"binding socket on {SOCK_IP}:{SOCK_PORT}")
     serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    serversocket.bind(("", SOCK_PORT))
+    serversocket.bind((SOCK_IP, SOCK_PORT))
     serversocket.listen(3)
 
     while True:
