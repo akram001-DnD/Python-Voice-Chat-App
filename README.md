@@ -4,6 +4,7 @@ An encrypted voice chat app, written in Python, that uses websockets to send dat
 # Setup
 - install python-sounddevice `python3 -m pip install sounddevice --user`
 - install numpy `pip install numpy`
+- install `pip install pycryptodome` instead of crypto
 
 ## How do I put the server on the internet?
 ### GCP instructions
