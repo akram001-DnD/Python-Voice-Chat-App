@@ -3,8 +3,8 @@ from threading import Thread, Lock, Condition
 import pickle
 import socket
 
-SOCK_IP = '10.128.0.2'  # internal IP  of the server
-# SOCK_IP = '192.168.1.42'  # internal IP  of the server
+# SOCK_IP = '10.128.0.2'  # internal IP  of the server
+SOCK_IP = '192.168.1.42'  # internal IP  of the server
 SOCK_PORT = 9001
 
 
