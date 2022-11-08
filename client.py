@@ -20,8 +20,8 @@ print("_________________________________________________________________________
 # socket connect to the server
 
 
-SERVER_IP = '34.28.43.168'  # Change this to the external IP of the server
-
+#SERVER_IP = '34.28.43.168'  # Change this to the external IP of the server
+SERVER_IP = '64.44.97.254'
 SERVER_PORT = 9001
 BUFMAX = 512
 running = True
