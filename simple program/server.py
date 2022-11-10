@@ -62,16 +62,16 @@ class LaunchServer:
                     self.users.remove(client)
 
 
-    def stop_server(self):
-        if self.__running:
-            self.__running = False
-            closing_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            closing_connection.connect((self.__host, self.__port))
-            closing_connection.close()
-            self.__block.acquire()
-            self.__server_socket.close()
-            self.__block.release()
-        else:
-            print("Server not running!")
+    # def stop_server(self):
+    #     if self.__running:
+    #         self.__running = False
+    #         closing_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #         closing_connection.connect((self.__host, self.__port))
+    #         closing_connection.close()
+    #         self.__block.acquire()
+    #         self.__server_socket.close()
+    #         self.__block.release()
+    #     else:
+    #         print("Server not running!")
 
         
