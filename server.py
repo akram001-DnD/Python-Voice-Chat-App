@@ -3,25 +3,25 @@ from threading import Thread, Lock, Condition
 import pickle
 import socket
 
-SOCK_IP = '10.128.0.2'  # internal IP  of the server
-# SOCK_IP = '192.168.1.42'  # internal IP  of the server
+# SOCK_IP = '10.128.0.2'  # internal IP  of the server
+SOCK_IP = '192.168.1.40'  # internal IP  of the server
 SOCK_PORT = 9001
 
 
 class Client:
     allClients = []
-    availableClients = {}  # {'client name' : client object}
+    availableClients = {}  # {'client sender' : client object}
 
 
     def __init__(self, client_ptr):
         Client.allClients.append(self)
         self.cl_ptr = client_ptr
-        self.name = None
-        self.name = self.get_name()
-        self.recipient_name = None
-        self.recipient_name = self.get_recipient_name()
-        print(f"received name {self.name} and recipient {self.recipient_name}")
-        Client.availableClients[self.name] = self
+        self.sender = None
+        self.sender = self.get_sender()
+        self.recipients = None
+        self.recipients = self.get_recipients()
+        print(f"received sender {self.sender} and recipient {self.recipients}")
+        Client.availableClients[self.sender] = self
         try:
             self.lobby()
         except ConnectionResetError:
@@ -35,8 +35,8 @@ class Client:
         cl = None
         while True:
             try:
-                cl = Client.availableClients[self.recipient_name]
-                if cl.get_recipient_name() == self.name:
+                cl = Client.availableClients[self.recipients]
+                if cl.get_recipients() == self.sender:
                     break
                 else:
                     print("recipient busy.")
@@ -53,19 +53,19 @@ class Client:
 
     # Enter a loop to keep searching for recipient in available clients
 
-    def get_name(self):
-        if self.name is None:
-            # receive name
-            self.name = self.cl_ptr[0].recv(512).decode().rstrip()
-            print(f"Client connected: {self.name}")
-        return self.name
+    def get_sender(self):
+        if self.sender is None:
+            # receive sender
+            self.sender = self.cl_ptr[0].recv(512).decode().rstrip()
+            print(f"Client connected: {self.sender}")
+        return self.sender
 
-    def get_recipient_name(self):
-        if self.recipient_name is None:
-            # receive recipient name
-            self.recipient_name = self.cl_ptr[0].recv(512).decode().rstrip()
-            print(f"Client {self.name} wants to connect to {self.recipient_name}")
-        return self.recipient_name
+    def get_recipients(self):
+        if self.recipients is None:
+            # receive recipient sender
+            self.recipients = self.cl_ptr[0].recv(512).decode().rstrip()
+            print(f"Client {self.sender} wants to connect to {self.recipients}")
+        return self.recipients
 
     # def getRecipientSocket(self):
     #     search list of available clients
@@ -91,15 +91,15 @@ class Client:
             Client.allClients.remove(self)
         except ValueError:
             print("Client does not exist in 'allClients' array")
-        Client.availableClients.pop(self.get_name(), None)
+        Client.availableClients.pop(self.get_sender(), None)
         self.cl_ptr[0].close()
-        print(f"Client {self.name} removed.")
+        print(f"Client {self.sender} removed.")
 
 def main():
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     print(f"binding socket on {SOCK_IP}:{SOCK_PORT}")
     serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    serversocket.bind((SOCK_IP, SOCK_PORT))
+    serversocket.bind(("0.0.0.0", SOCK_PORT))
     serversocket.listen(3)
 
     while True:
