@@ -18,7 +18,8 @@ import numpy as np
 # value of frames
 
 
-host="192.168.1.33"
+# host="64.44.97.254"
+host="192.168.1.40"
 port=9001
 MAX_BYTES_SEND = 1024  # Must be less than 1024 because of networking limits
 MAX_HEADER_LEN = 20  # allocates 20 bytes to store length of data that is transmitted

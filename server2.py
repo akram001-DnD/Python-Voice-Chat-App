@@ -40,16 +40,15 @@ def send_voice(conn,voice):
 
 #* Handling connection from multiple clients
 def launch_lobby(conn,addr):
+    print("Connection has been established! IP: ", addr[0])
+    list_of_clients.append(conn)
+    all_addrs.append(addr)
     while True:
         try:
-            voice = conn.recv(1024)
-            print("Connection has been established! IP: ", addr[0])
-            list_of_clients.append(conn)
-            all_addrs.append(addr)
-
+            voice = conn.recv(1024) 
             for client in list_of_clients:
                 if conn != client:
-                    print(client)
+                    print("Client: ",client[-1]," is connected")
                     try:
                         send_voice(client,voice)
                     except:
