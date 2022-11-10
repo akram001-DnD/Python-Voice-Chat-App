@@ -1,6 +1,8 @@
 import socket
 import threading
 import pyaudio
+import struct 
+import pickle 
 
 class LaunchServer:
 
@@ -36,7 +38,7 @@ class LaunchServer:
             self.__block.acquire()
             connection, address = self.__server_socket.accept()
             self.users.append((connection, address))
-            print(f"Client {connection} Have Been Connected!")
+            print(f"Client {address[0]} Have Been Connected!")
             if self.__used_slots >= self.__slots:
                 print("Connection refused! No free slots!")
                 connection.close()
@@ -52,14 +54,13 @@ class LaunchServer:
     def __client_connection(self, connection, address):
         while self.__running:
             data = connection.recv(self.__frame_chunk)
+            
             for client in self.users:
                 if client[0] != connection:
-                    self.__server_socket.send(data)
-      
-                # try:
-                #     if client[0] != connection:
-                #         self.__server_socket.send(data)
-                # except:
+                    client[0].send(data)
+                # if client[0] != connection:
+                #     client[0].send(data)
+                # else:
                 #     print(f"Client {client[1]} Disconnected!")
                 #     client[0].close()
                 #     self.users.remove(client)
@@ -100,8 +101,11 @@ class LaunchClient:
             print("Already streaming")
         else:
             self.__running = True
-            thread = threading.Thread(target=self.__client_streaming)
-            thread.start()
+            thread1 = threading.Thread(target=self.__client_streaming)
+            # thread2 = threading.Thread(target=self.__hearing)
+
+            thread1.start()
+            # thread2.start()
 
     def stop_stream(self):
         if self.__running:
@@ -112,11 +116,31 @@ class LaunchClient:
     def __client_streaming(self):
         self.__sending_socket.connect((self.__host, self.__port))
         self.__stream = self.__audio.open(format=self.__audio_format, channels=self.__channels, rate=self.__rate, input=True, frames_per_buffer=self.__frame_chunk)
+        data = b""
+        payload_size = struct.calcsize("Q")
         while self.__running:
             self.__sending_socket.send(self.__stream.read(self.__frame_chunk))
-            data = self.__sending_socket.recv(self.__frame_chunk)
-            self.__stream.write(data)
-    
+            try:
+                while len(data) < payload_size:
+                    packet = self.__sending_socket.recv(4*self.__frame_chunk) # 4K
+                    if not packet: break
+                    data+=packet
+                packed_msg_size = data[:payload_size]
+                data = data[payload_size:]
+                msg_size = struct.unpack("Q",packed_msg_size)[0]    
+                while len(data) < msg_size:
+                    data += self.__sending_socket.recv(4*self.__frame_chunk)
+                frame_data = data[:msg_size]
+                data  = data[msg_size:]
+                frame = pickle.loads(frame_data)
+                self.__stream.write(frame)
+            except:
+                break
+
+    # def __hearing(self):
+    #     while self.__running:
+    #         self.__sending_socket.send(self.__stream.read(self.__frame_chunk))
+
     # def set_volume(self,datalist, volume):
     #     # Change value of list of audio chunks
     #     sound_level = (volume / 100.)
