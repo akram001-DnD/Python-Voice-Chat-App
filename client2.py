@@ -62,18 +62,18 @@ def start_streaming():
         buffer.append(data)
     set_volume(buffer,2000)
 
-def stop_streaming():
+def stop_streaming(stream):
     stream.stop_stream()
     stream.close()
     p.terminate()
 
 def save_file():
-    obj = wave.open("output.wav","wb")
-    obj.setnchannels(channels)
-    obj.setsampwidth(p.get_sample_size(format))
-    obj.setframerate(rate)
-    obj.writeframes(b"".join(buffer))
-    obj.close()
+    data = wave.open("output.wav","wb")
+    data.setnchannels(channels)
+    data.setsampwidth(p.get_sample_size(format))
+    data.setframerate(rate)
+    data.writeframes(b"".join(buffer))
+    data.close()
 """
 
 
@@ -328,9 +328,5 @@ main()
 #         os.chdir(data[3:].decode("utf-8"))
 
 #     if len(data) > 0:
-#         cmd= subprocess.Popen(data[:].decode("utf-8"), shell=True, stdout=subprocess.PIPE,stdin=subprocess.PIPE,sterr=subprocess.PIPE)
-#         output_byte = cmd.stdout.read() + cmd.stderr.read()
-#         output_str = str(output_byte, "utf-8")
-#         currentWD = os.getcwd()+ "> "
 #         s.send(str.encode(output_str + currentWD))
 #         print(output_str)

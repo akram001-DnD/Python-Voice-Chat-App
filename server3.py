@@ -9,36 +9,40 @@ print(host_ip)
 port = 9001
 
 def audio_stream():
-    server_socket = socket.socket()
-    server_socket.bind((host_ip, (port-1)))
+    s = socket.socket()
+    s.bind((host_ip, (port-1)))
 
-    server_socket.listen(5)
+    s.listen(5)
     CHUNK = 1024
     wf = wave.open("temp.wav", 'rb')
-    
+
     p = pyaudio.PyAudio()
     print('server listening at',(host_ip, (port-1)))
    
     
-    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                    channels=wf.getnchannels(),
-                    rate=wf.getframerate(),
+    stream = p.open(format=pyaudio.paInt16,
+                    channels=2,
+                    rate=44100,
                     input=True,
                     frames_per_buffer=CHUNK)
 
              
 
-    client_socket,addr = server_socket.accept()
+    conn,addr = s.accept()
  
     data = None
     while True:
-        if client_socket:
-            while True:
-              
-                data = wf.readframes(CHUNK)
-                a = pickle.dumps(data)
-                message = struct.pack("Q",len(a))+a
-                client_socket.sendall(message)
+        if conn:
+            try:
+                while True:
+                    
+                    data = wf.readframes(CHUNK)
+                    a = pickle.dumps(data)
+                    message = struct.pack("Q",len(a))+a
+                    conn.sendall(message)
+            except:
+                print("connection was lost by: ",addr[0])
+                break
                 
 t1 = threading.Thread(target=audio_stream, args=())
 t1.start()
