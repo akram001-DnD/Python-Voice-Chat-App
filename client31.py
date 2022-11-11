@@ -3,8 +3,8 @@ import threading, wave, pyaudio, pickle,struct
 import numpy as np
 
 host_name = socket.gethostname()
-# host_ip="64.44.97.254"
-host_ip = '192.168.1.40'
+host_ip="64.44.97.254"
+# host_ip = '192.168.1.40'
 port = 9001
 CHUNK = 1024
 rate = 44100
@@ -90,28 +90,32 @@ def audio_recieve():
     print('server listening at ',port)
     # s.connect((host_ip,port))
     print("CLIENT CONNECTED TO ",host_ip)
-    data = b""
-    payload_size = struct.calcsize("Q")
     while True:
-        try:
-            while len(data) < payload_size:
-                packet = s.recv(4*1024) # 4K
-                if not packet: break
-                data+=packet
-            packed_msg_size = data[:payload_size]
-            data = data[payload_size:]
-            msg_size = struct.unpack("Q",packed_msg_size)[0]
-            while len(data) < msg_size:
-                data += s.recv(4*1024)
-            frame_data = data[:msg_size]
-            data  = data[msg_size:]
-            frame = pickle.loads(frame_data)
-            stream.write(frame)
-        except:
-            break
-    s.close()
-    print("Audio Closed")
-    os._exit(1)
+        stream.write(s.recv(CHUNK))
+
+
+    # data = b""
+    # payload_size = struct.calcsize("Q")
+    # while True:
+    #     try:
+    #         while len(data) < payload_size:
+    #             packet = s.recv(4*1024) # 4K
+    #             if not packet: break
+    #             data+=packet
+    #         packed_msg_size = data[:payload_size]
+    #         data = data[payload_size:]
+    #         msg_size = struct.unpack("Q",packed_msg_size)[0]
+    #         while len(data) < msg_size:
+    #             data += s.recv(4*1024)
+    #         frame_data = data[:msg_size]
+    #         data  = data[msg_size:]
+    #         frame = pickle.loads(frame_data)
+    #         stream.write(frame)
+    #     except:
+    #         break
+    # s.close()
+    # print("Audio Closed")
+    # os._exit(1)
 
 
 
@@ -126,12 +130,11 @@ def audio_send():
     data = None
     while True:
         if s:
-            # s.connect((host_ip,port))
             data = stream.read(CHUNK)
             # data = set_volume(data,1500)
-            a = pickle.dumps(data)
-            message = struct.pack("Q",len(a))+a
-            s.sendall(message)
+            # a = pickle.dumps(data)
+            # message = struct.pack("Q",len(a))+a
+            s.sendall(data)
     
                 
 t1 = threading.Thread(target=audio_send, args=())
