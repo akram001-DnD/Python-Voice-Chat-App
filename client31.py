@@ -3,6 +3,7 @@ import threading, wave, pyaudio, pickle,struct
 import numpy as np
 
 host_name = socket.gethostname()
+# host_ip="64.44.97.254"
 host_ip = '192.168.1.40'#  socket.gethostbyname(host_name)
 port = 9001
 CHUNK = 1024
@@ -74,7 +75,7 @@ try:
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 except socket.error as msg:
     print("Socket creation error: ", str(msg))
-
+s.connect((host_ip,port))
 def audio_recieve():
     stream = p.open(format=format,
     channels=2,
@@ -87,7 +88,7 @@ def audio_recieve():
     # create_socket()
     # bind_socket
     print('server listening at ',port)
-    s.connect((host_ip,port))
+    # s.connect((host_ip,port))
     print("CLIENT CONNECTED TO ",host_ip)
     data = b""
     payload_size = struct.calcsize("Q")
@@ -125,7 +126,7 @@ def audio_send():
     data = None
     while True:
         if s:
-         
+            # s.connect((host_ip,port))
             while True:
                 data = stream.read(CHUNK)
                 # data = set_volume(data,1500)

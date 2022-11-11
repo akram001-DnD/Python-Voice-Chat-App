@@ -44,6 +44,7 @@ def audio_stream():
                 print("connection was lost by: ",addr[0])
                 break
                 
+
 t1 = threading.Thread(target=audio_stream, args=())
 t1.start()
 
