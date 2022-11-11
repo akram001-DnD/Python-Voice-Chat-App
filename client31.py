@@ -3,8 +3,8 @@ import threading, wave, pyaudio, pickle,struct
 import numpy as np
 
 host_name = socket.gethostname()
-host_ip="64.44.97.254"
-# host_ip = '192.168.1.40'
+# host_ip="64.44.97.254"
+host_ip = '192.168.1.40'
 port = 9001
 CHUNK = 1024
 rate = 44100
@@ -59,6 +59,7 @@ def create_socket():
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     except socket.error as msg:
         print("Socket creation error: ", str(msg))
+    return s
 
 def bind_socket():
     try:
@@ -71,12 +72,8 @@ def bind_socket():
         bind_socket()
 
 
-try:
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-except socket.error as msg:
-    print("Socket creation error: ", str(msg))
-s.connect((host_ip,port))
-def audio_recieve():
+
+def audio_recieve(s):
     stream = p.open(format=format,
     channels=2,
     rate=rate,
@@ -119,7 +116,7 @@ def audio_recieve():
 
 
 
-def audio_send():
+def audio_send(s):
 
     stream = p.open(format=pyaudio.paInt16,
                 channels=2,
@@ -136,9 +133,12 @@ def audio_send():
             # message = struct.pack("Q",len(a))+a
             s.sendall(data)
     
-                
-t1 = threading.Thread(target=audio_send, args=())
-t1.start()
-	
-t2 = threading.Thread(target=audio_recieve, args=())
-t2.start()
+def main():
+    s = create_socket()
+    s.connect((host_ip,port))     
+               
+    t1 = threading.Thread(target=audio_send, args=(s))
+    t2 = threading.Thread(target=audio_recieve, args=(s))
+        
+    t1.start()
+    t2.start()

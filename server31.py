@@ -4,26 +4,15 @@ import socket
 import threading, pyaudio,pickle,struct
 
 host_name = socket.gethostname()
-host_ip = '0.0.0.0'#  socket.gethostbyname(host_name)
+host_ip = '0.0.0.0'
 print(host_ip)
 port = 9001
 clients_list = []
-
+addrs_list = []
 
 def audio_stream(conn,addr):
-    global s
-    # s = socket.socket()
-    # s.bind((host_ip, port))
-
-    # s.listen(5)
-
-    # print('server listening at',(host_ip, port))
-   
-    
-
-    # conn,addr = s.accept()
     clients_list.append((conn,addr))
-
+    addrs_list.append(addr)
     data = None
     while True:
         if conn:
@@ -35,10 +24,12 @@ def audio_stream(conn,addr):
                             client[0].sendall(data)  
             except:
                 print("connection was lost by: ",addr[0])
+                print(f"clients list: {addrs_list}")
+                client[0].close()
+                clients_list.remove(client)
+                addrs_list.remove(client[1])
                 break
                 
-# t1 = threading.Thread(target=audio_stream, args=())
-# t1.start()
 
 def main():
     global s
