@@ -1,6 +1,8 @@
 import socket,os
 import threading, wave, pyaudio, pickle,struct
 import numpy as np
+import time
+import sys
 
 host_name = socket.gethostname()
 # host_ip="64.44.97.254"
@@ -54,42 +56,31 @@ def save_file():
     data.close()
 
 def create_socket():
-    global s
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     except socket.error as msg:
         print("Socket creation error: ", str(msg))
-    return s
-
-def bind_socket():
-    try:
-        global s
-        print("Binding to port: ",str(port))
-        s.bind((host_ip,port))
-        s.listen(3)
-    except socket.error as msg:
-        print("Socket creation error: ", str(msg), "\n" , "Retrying...")
-        bind_socket()
 
 
-
-def audio_recieve(s):
+def audio_recieve():
+    global s
     stream = p.open(format=format,
     channels=2,
     rate=rate,
     output=True,
     frames_per_buffer=CHUNK)
 
-    # global stream
-    # global s
-    # create_socket()
-    # bind_socket
     print('server listening at ',port)
-    # s.connect((host_ip,port))
     print("CLIENT CONNECTED TO ",host_ip)
     while True:
-        stream.write(s.recv(CHUNK))
-
+        try:
+            stream.write(s.recv(CHUNK))
+        except ConnectionResetError:
+            print("Connection to the server was lost, Reconnecting Again...")
+            for i in range(3):
+                time.sleep(1)
+                main()
+            break
 
     # data = b""
     # payload_size = struct.calcsize("Q")
@@ -116,8 +107,8 @@ def audio_recieve(s):
 
 
 
-def audio_send(s):
-
+def audio_send():
+    global s
     stream = p.open(format=pyaudio.paInt16,
                 channels=2,
                 rate=44100,
@@ -131,14 +122,37 @@ def audio_send(s):
             # data = set_volume(data,1500)
             # a = pickle.dumps(data)
             # message = struct.pack("Q",len(a))+a
-            s.sendall(data)
+            try:
+                s.sendall(data)
+            except ConnectionResetError:
+                print("Connection to the server was lost, Reconnecting Again...")
+                for i in range(3):
+                    time.sleep(1)
+                    main()
+                break
+            
     
+                
+
 def main():
-    s = create_socket()
-    s.connect((host_ip,port))     
-               
-    t1 = threading.Thread(target=audio_send, args=(s))
-    t2 = threading.Thread(target=audio_recieve, args=(s))
+    global s
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    except socket.error as msg:
+        print("Socket creation error: ", str(msg))
+    try:
+        s.connect((host_ip,port))
+    except ConnectionRefusedError:
+        print("This Server Is Dead!, Try Again Later.")
+        sys.exit()
+    except OSError:
+        print("Unknown Error Happened!, Connection Closed.")
+        sys.exit()
         
+    t1 = threading.Thread(target=audio_send, args=())
     t1.start()
+
+    t2 = threading.Thread(target=audio_recieve, args=())
     t2.start()
+
+main()
