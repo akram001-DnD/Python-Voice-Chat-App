@@ -4,7 +4,7 @@ import numpy as np
 
 host_name = socket.gethostname()
 # host_ip="64.44.97.254"
-host_ip = '192.168.1.40'#  socket.gethostbyname(host_name)
+host_ip = '192.168.1.40'
 port = 9001
 CHUNK = 1024
 rate = 44100
@@ -127,12 +127,11 @@ def audio_send():
     while True:
         if s:
             # s.connect((host_ip,port))
-            while True:
-                data = stream.read(CHUNK)
-                # data = set_volume(data,1500)
-                a = pickle.dumps(data)
-                message = struct.pack("Q",len(a))+a
-                s.sendall(message)
+            data = stream.read(CHUNK)
+            # data = set_volume(data,1500)
+            a = pickle.dumps(data)
+            message = struct.pack("Q",len(a))+a
+            s.sendall(message)
     
                 
 t1 = threading.Thread(target=audio_send, args=())

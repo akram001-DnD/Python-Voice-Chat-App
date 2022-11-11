@@ -29,7 +29,6 @@ def audio_stream(conn,addr):
         if conn:
             try:
                 while True:
-                    print(clients_list)
                     data = conn.recv(1024)
                     for client in clients_list:
                         if client[0] != conn:
@@ -52,6 +51,7 @@ def main():
     while True:
         try:
             conn, addr = s.accept()
+            print(f"Client {addr} Have been connected!")
             t1 = threading.Thread(target=audio_stream, args=(conn, addr))
             t1.start()
         except KeyboardInterrupt:
