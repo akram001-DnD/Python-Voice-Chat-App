@@ -54,7 +54,8 @@ class LaunchServer:
     def __client_connection(self, connection, address):
         while self.__running:
             data = connection.recv(self.__frame_chunk)
-            
+            # a = pickle.dumps(data)
+            # message = struct.pack("Q",len(a))+a
             for client in self.users:
                 if client[0] != connection:
                     client[0].send(data)
@@ -101,11 +102,11 @@ class LaunchClient:
             print("Already streaming")
         else:
             self.__running = True
-            thread1 = threading.Thread(target=self.__client_streaming)
-            # thread2 = threading.Thread(target=self.__hearing)
+            thread1 = threading.Thread(target=self.__hearing)
+            thread2 = threading.Thread(target=self.__recording)
 
             thread1.start()
-            # thread2.start()
+            thread2.start()
 
     def stop_stream(self):
         if self.__running:
@@ -113,33 +114,37 @@ class LaunchClient:
         else:
             print("Client not streaming")
 
-    def __client_streaming(self):
+    def __hearing(self):
         self.__sending_socket.connect((self.__host, self.__port))
         self.__stream = self.__audio.open(format=self.__audio_format, channels=self.__channels, rate=self.__rate, input=True, frames_per_buffer=self.__frame_chunk)
-        data = b""
+        data_recv = b""
         payload_size = struct.calcsize("Q")
         while self.__running:
-            self.__sending_socket.send(self.__stream.read(self.__frame_chunk))
+            # self.__sending_socket.send(self.__stream.read(self.__frame_chunk))
             try:
-                while len(data) < payload_size:
-                    packet = self.__sending_socket.recv(4*self.__frame_chunk) # 4K
+                while len(data_recv) < payload_size:
+                    packet = self.__sending_socket.recv(self.__frame_chunk) # 4K
                     if not packet: break
-                    data+=packet
-                packed_msg_size = data[:payload_size]
-                data = data[payload_size:]
+                    data_recv+=packet
+                packed_msg_size = data_recv[:payload_size]
+                data_recv = data_recv[payload_size:]
                 msg_size = struct.unpack("Q",packed_msg_size)[0]    
-                while len(data) < msg_size:
-                    data += self.__sending_socket.recv(4*self.__frame_chunk)
-                frame_data = data[:msg_size]
-                data  = data[msg_size:]
+                while len(data_recv) < msg_size:
+                    data_recv += self.__sending_socket.recv(self.__frame_chunk)
+                frame_data = data_recv[:msg_size]
+                data_recv  = data_recv[msg_size:]
                 frame = pickle.loads(frame_data)
                 self.__stream.write(frame)
             except:
                 break
 
-    # def __hearing(self):
-    #     while self.__running:
-    #         self.__sending_socket.send(self.__stream.read(self.__frame_chunk))
+    def __recording(self):
+        self.__stream = self.__audio.open(format=self.__audio_format, channels=self.__channels, rate=self.__rate, input=True, frames_per_buffer=self.__frame_chunk)
+        while self.__running:
+                    data_sent = self.__stream.read(self.__frame_chunk)
+                    a = pickle.dumps(data_sent)
+                    voice = struct.pack("Q",len(a))+a
+                    self.__sending_socket.sendall(voice)
 
     # def set_volume(self,datalist, volume):
     #     # Change value of list of audio chunks
