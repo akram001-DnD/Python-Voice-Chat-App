@@ -17,23 +17,25 @@ def audio_stream(conn,addr):
     while True:
         if conn:
             try:
-                while True:
-                    data = conn.recv(1024)
-                    for client in clients_list:
-                        if client[0] != conn:
-                            client[0].sendall(data)  
-            except:
-                print("connection was lost by: ",addr[0])
-                print(f"clients list: {addrs_list}")
-                client[0].close()
-                clients_list.remove(client)
-                addrs_list.remove(client[1])
-                break
+                data = conn.recv(1024)
+            except ConnectionResetError:
+                continue
+            for client in clients_list:
+                if client[0] != conn:
+                    try:
+                        client[0].sendall(data)  
+                    except:
+                        print("connection was lost by: ",addr[0])
+                        client[0].close()
+                        clients_list.remove(client)
+                        addrs_list.remove(client[1])
+                        print(f"clients list: {addrs_list}")
+                        break
                 
 
 def main():
     global s
-    s = socket.socket()
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((host_ip, port))
     s.listen(5)
     print('server listening at',(host_ip, port))
