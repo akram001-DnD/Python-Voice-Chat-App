@@ -116,7 +116,7 @@ class LaunchClient:
 
     def __hearing(self):
         self.__sending_socket.connect((self.__host, self.__port))
-        self.__stream = self.__audio.open(format=self.__audio_format, channels=self.__channels, rate=self.__rate, input=True, frames_per_buffer=self.__frame_chunk)
+        self.__stream = self.__audio.open(format=self.__audio_format, channels=self.__channels, rate=self.__rate, output=True, frames_per_buffer=self.__frame_chunk)
         data_recv = b""
         payload_size = struct.calcsize("Q")
         while self.__running:

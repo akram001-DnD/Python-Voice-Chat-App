@@ -7,10 +7,12 @@ host_name = socket.gethostname()
 host_ip = '0.0.0.0'#  socket.gethostbyname(host_name)
 print(host_ip)
 port = 9001
+clients_list = []
+
 
 def audio_stream():
     s = socket.socket()
-    s.bind((host_ip, (port-1)))
+    s.bind((host_ip, port))
 
     s.listen(5)
 
@@ -19,14 +21,16 @@ def audio_stream():
     
 
     conn,addr = s.accept()
- 
+    clients_list.append((conn,addr))
+
     data = None
     while True:
         if conn:
             try:
                 while True:
                     data = conn.recv(1024)
-                    conn.sendall(data)
+                    for client in clients_list:
+                        client[0].sendall(data)  
             except:
                 print("connection was lost by: ",addr[0])
                 break

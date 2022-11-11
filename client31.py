@@ -37,6 +37,7 @@ def set_volume(data, volume):
     chunk = np.fromstring(data, np.int16)
     chunk = chunk * sound_level
     data = chunk.astype(np.int16)
+    return data
 
 def stop_streaming(stream):
     stream.stop_stream()
@@ -75,10 +76,16 @@ except socket.error as msg:
     print("Socket creation error: ", str(msg))
 
 def audio_recieve():
+    stream = p.open(format=format,
+    channels=2,
+    rate=rate,
+    output=True,
+    frames_per_buffer=CHUNK)
+
     # global stream
     # global s
     # create_socket()
-    bind_socket
+    # bind_socket
     print('server listening at ',port)
     s.connect((host_ip,port))
     print("CLIENT CONNECTED TO ",host_ip)
@@ -108,18 +115,24 @@ def audio_recieve():
 
 
 def audio_send():
+
+    stream = p.open(format=pyaudio.paInt16,
+                channels=2,
+                rate=44100,
+                input=True,
+                frames_per_buffer=CHUNK)
+
     data = None
     while True:
         if s:
-            try:
-                while True:
-                    data = stream.read(CHUNK)
-                    a = pickle.dumps(data)
-                    message = struct.pack("Q",len(a))+a
-                    s.sendall(message)
-            except:
-                print("connection was lost by: ")
-                break
+         
+            while True:
+                data = stream.read(CHUNK)
+                # data = set_volume(data,1500)
+                a = pickle.dumps(data)
+                message = struct.pack("Q",len(a))+a
+                s.sendall(message)
+    
                 
 t1 = threading.Thread(target=audio_send, args=())
 t1.start()
