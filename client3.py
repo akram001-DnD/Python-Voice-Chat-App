@@ -1,6 +1,6 @@
 import socket,os
 import threading, wave, pyaudio, pickle,struct
-
+import numpy as np
 
 host_name = socket.gethostname()
 host_ip = '192.168.1.40'#  socket.gethostbyname(host_name)
@@ -12,7 +12,14 @@ recording = True
 format = pyaudio.paInt16
 p = pyaudio.PyAudio()
 
+stream = p.open(format=format,
+    channels=2,
+    rate=rate,
+    output=True,
+    frames_per_buffer=CHUNK)
+
 def start_streaming(): 
+    global stream
     stream = p.open(format=format,
         channels=2,
         rate=rate,
@@ -21,8 +28,15 @@ def start_streaming():
     print("start recording")
     while recording:
         data = stream.read(CHUNK)
+        # data = set_volume(data,1500)
         buffer.append(data)
 
+def set_volume(data, volume):
+    # Change value of list of audio chunks
+    sound_level = (volume / 100.)
+    chunk = np.fromstring(data, np.int16)
+    chunk = chunk * sound_level
+    data = chunk.astype(np.int16)
 
 def stop_streaming(stream):
     stream.stop_stream()
@@ -38,6 +52,7 @@ def save_file():
     data.close()
 
 def create_socket():
+    global s
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     except socket.error as msg:
@@ -47,26 +62,26 @@ def bind_socket():
     try:
         global s
         print("Binding to port: ",str(port))
-        s.bind((host,port))
+        s.bind((host_ip,port))
         s.listen(3)
     except socket.error as msg:
         print("Socket creation error: ", str(msg), "\n" , "Retrying...")
         bind_socket()
 
-stream = p.open(format=p.get_format_from_width(2),
-					channels=2,
-					rate=44100,
-					output=True,
-					frames_per_buffer=CHUNK)        
-def audio_stream():
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    except socket.error as msg:
-        print("Socket creation error: ", str(msg))
-    socket_address = (host_ip,port)
-    print('server listening at',socket_address)
-    s.connect(socket_address) 
-    print("CLIENT CONNECTED TO",socket_address)
+
+try:
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+except socket.error as msg:
+    print("Socket creation error: ", str(msg))
+
+def audio_recieve():
+    # global stream
+    # global s
+    # create_socket()
+    bind_socket
+    print('server listening at ',port)
+    s.connect((host_ip,port))
+    print("CLIENT CONNECTED TO ",host_ip)
     data = b""
     payload_size = struct.calcsize("Q")
     while True:
@@ -90,6 +105,24 @@ def audio_stream():
     print("Audio Closed")
     os._exit(1)
 
-	
-t1 = threading.Thread(target=audio_stream, args=())
+
+
+def audio_send():
+    data = None
+    while True:
+        if s:
+            try:
+                while True:
+                    data = stream.read(CHUNK)
+                    a = pickle.dumps(data)
+                    message = struct.pack("Q",len(a))+a
+                    s.sendall(message)
+            except:
+                print("connection was lost by: ")
+                break
+                
+t1 = threading.Thread(target=audio_send, args=())
 t1.start()
+	
+t2 = threading.Thread(target=audio_recieve, args=())
+t2.start()
