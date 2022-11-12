@@ -9,6 +9,7 @@ print(host_ip)
 port = 9001
 clients_list = []
 addrs_list = []
+IDs_list = []
 
 def audio_stream(conn,addr):
     clients_list.append(conn)
@@ -21,8 +22,10 @@ def audio_stream(conn,addr):
             except ConnectionResetError:
                 print("connection was lost by: ",addr)
                 conn.close()
+                index = clients_list.index(conn)
                 clients_list.remove(conn)
                 addrs_list.remove(addr)
+                IDs_list.pop(index)
                 break
             for i,client in enumerate(clients_list):
                 if client != conn:
@@ -40,6 +43,7 @@ def audio_stream(conn,addr):
 def main():
     global s
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind((host_ip, port))
     s.listen(5)
     print('server listening at',(host_ip, port))
@@ -49,6 +53,14 @@ def main():
         try:
             conn, addr = s.accept()
             print(f"Client {addr} Have been connected!")
+            print("Taking client ID...")
+            conn.send("Extracting Client Information... ".encode())
+            id = None
+            while True:
+                id = conn.recv(1024)
+                if id is not None:
+                    IDs_list.append(id.decode())
+                    break
             t1 = threading.Thread(target=audio_stream, args=(conn, addr))
             t1.start()
         except KeyboardInterrupt:

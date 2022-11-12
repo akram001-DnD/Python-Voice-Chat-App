@@ -153,6 +153,15 @@ def main():
     except OSError:
         print("Unknown Error Happened!, Connection Closed.")
         sys.exit()
+    msg = None
+    while True:
+        msg = s.recv(1024)   
+        print(msg.decode(),"\n") 
+        if msg is not None:
+            id_sent = input("What is your ID: ")
+            s.send(id_sent.encode())
+            break
+
 
     t1 = threading.Thread(target=audio_send, args=())
     t1.start()
