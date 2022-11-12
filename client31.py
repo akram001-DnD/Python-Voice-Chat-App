@@ -6,7 +6,7 @@ import sys
 
 host_name = socket.gethostname()
 # host_ip="64.44.97.254"
-host_ip = '192.168.1.40'
+host_ip = '192.168.1.41'
 port = 9001
 CHUNK = 2048
 rate = 44100
