@@ -5,7 +5,8 @@ import socket
 import threading,  pyaudio, time, queue
 
 host_name = socket.gethostname()
-host_ip = '192.168.1.41'#  socket.gethostbyname(host_name)
+host_ip = '192.168.1.41'
+# host_ip="64.44.97.254"
 print(host_ip)
 port = 9633
 # For details visit: www.pyshine.com
@@ -32,7 +33,7 @@ def audio_stream_UDP():
     message = b'Hello'
     s.sendto(message,(host_ip,port))
 
-    q = queue.Queue(maxsize=60000)
+    q = queue.Queue(maxsize=10000)
     def getAudioData():
         while True:
             frame,_= s.recvfrom(BUFF_SIZE)

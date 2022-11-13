@@ -7,6 +7,9 @@ host_name = socket.gethostname()
 host_ip = '0.0.0.0'#  socket.gethostbyname(host_name)
 print(host_ip)
 port = 9633
+clients_list = []
+addrs_list = []
+IDs_list = []
 # For details visit: www.pyshine.com
 
 def audio_stream_UDP():
@@ -22,16 +25,24 @@ def audio_stream_UDP():
 
 
     data = None
-    sample_rate = 44100
+    msg = None
     while True:
         msg,client_addr = s.recvfrom(BUFF_SIZE)
-        print('[GOT connection from]... ',client_addr,msg)
-        while True:
-            data, addr = s.recvfrom(BUFF_SIZE)
-            s.sendto(data,addr)
-            time.sleep(0.00000000000000000001) # Here you can adjust it according to how fast you want to send data keep it > 0
-        break
-        print('SENT...')            
+        if msg is not None:
+            print('[GOT connection from]... ',client_addr,msg.decode())
+            s.sendto(b"Server Message: You Have Connected",client_addr)
+            clients_list.append(client_addr)
+            while True:
+                data, addr = s.recvfrom(BUFF_SIZE)
+                for client in clients_list:
+                    if addr != client_addr:
+                        try:
+                            s.sendto(data,client)
+                            time.sleep(0.1) # Here you can adjust it according to how fast you want to send data keep it > 0
+                            print(clients_list)
+                        except:
+                            print(f"Client {client} Disconnected!")
+                            clients_list.remove(client)
 
 t1 = threading.Thread(target=audio_stream_UDP, args=())
 t1.start()
