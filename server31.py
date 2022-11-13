@@ -30,12 +30,13 @@ def audio_stream(conn,addr):
             for i,client in enumerate(clients_list):
                 if client != conn:
                     try:
-                        client.sendall(data)  
+                        client.send(data)  
                     except:
                         print("connection was lost by: ",addr)
                         client.close()
                         clients_list.pop(i)
                         addrs_list.pop(i)
+                        IDs_list.pop(i)
                         print(f"clients list: {addrs_list}")
                         break
                 
@@ -52,14 +53,15 @@ def main():
     while True:
         try:
             conn, addr = s.accept()
-            print(f"Client {addr} Have been connected!")
             print("Taking client ID...")
             conn.send("Extracting Client Information... ".encode())
             id = None
             while True:
-                id = conn.recv(1024)
+                id = conn.recv(512)
                 if id is not None:
-                    IDs_list.append(id.decode())
+                    id = id.decode()
+                    IDs_list.append(id)
+                    print(f"Client {id} : {addr} Have been connected!")
                     break
             t1 = threading.Thread(target=audio_stream, args=(conn, addr))
             t1.start()
