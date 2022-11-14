@@ -3,6 +3,8 @@
 import socket
 import threading,  pyaudio, time
 import math
+import sys
+
 host_name = socket.gethostname()
 host_ip = '0.0.0.0'#  socket.gethostbyname(host_name)
 print(host_ip)
@@ -23,26 +25,33 @@ def audio_stream_UDP():
     p = pyaudio.PyAudio()
     print('server listening at',(host_ip, (port)))
 
+    
+    
 
-    data = None
-    msg = None
     while True:
-        msg,client_addr = s.recvfrom(BUFF_SIZE)
-        if msg is not None:
-            print('[GOT connection from]... ',client_addr,msg.decode())
-            s.sendto(b"Server Message: You Have Connected",client_addr)
-            clients_list.append(client_addr)
-            while True:
-                data, addr = s.recvfrom(BUFF_SIZE)
-                for client in clients_list:
-                    if addr != client_addr:
-                        try:
-                            s.sendto(data,client)
-                            time.sleep(0.1) # Here you can adjust it according to how fast you want to send data keep it > 0
-                            print(clients_list)
-                        except:
-                            print(f"Client {client} Disconnected!")
-                            clients_list.remove(client)
+        data = None
+        try:
+            data, addr = s.recvfrom(BUFF_SIZE)
+        except ConnectionResetError:
+            pass
+
+        if addr not in clients_list:
+            print('[GOT connection from]... ',addr,)
+            s.sendto(f"Server Message: You Have been Connected".encode(),addr)   
+            clients_list.append(addr)
+            print(clients_list)
+        if data is None:
+            clients_list.remove(addr)
+        elif data is not None:
+            for client in clients_list:
+                if addr != client:
+                    s.sendto(data,client)
+                    time.sleep(0.1) # Here you can adjust it according to how fast you want to send data keep it > 0
+
+
+                # print(f"Client {client} Disconnected!")
+                # clients_list.remove(client)
+                # break
 
 t1 = threading.Thread(target=audio_stream_UDP, args=())
 t1.start()

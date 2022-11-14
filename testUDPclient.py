@@ -3,6 +3,8 @@
 
 import socket
 import threading,  pyaudio, time, queue
+import sys
+import numpy as np
 
 host_name = socket.gethostname()
 host_ip = '192.168.1.41'
@@ -10,7 +12,6 @@ host_ip = '192.168.1.41'
 print(host_ip)
 port = 9633
 # For details visit: www.pyshine.com
-
 
 def audio_stream_UDP():
     BUFF_SIZE = 65536
@@ -29,16 +30,32 @@ def audio_stream_UDP():
 					rate=44100,
 					input=True,
 					frames_per_buffer=CHUNK)			
-    # create socket
+
     message = b'Hello'
     s.sendto(message,(host_ip,port))
-
+    answer,_ = s.recvfrom(BUFF_SIZE)
+    print(answer.decode())
     q = queue.Queue(maxsize=10000)
+
+
+    def set_volume(data, volume):
+        sound_level = (volume / 100.)
+        chunk = np.fromstring(data, np.int16)
+        chunk = chunk * sound_level
+        data = chunk.astype(np.int16)
+        return data
+
+
     def getAudioData():
         while True:
-            frame,_= s.recvfrom(BUFF_SIZE)
-            q.put(frame)
-            print('[Queue size while loading]...',q.qsize())
+            try:
+                frame,_= s.recvfrom(BUFF_SIZE)
+                q.put(frame)
+                # print('[Queue size while loading]...',q.qsize())
+            except:
+                s.close()
+                print('Audio closed')
+                sys._exit()
 
     def sendAudioData():
         while True:
@@ -55,10 +72,9 @@ def audio_stream_UDP():
 
     while True:
         frame = q.get()
+        frame = set_volume(frame, 200)
         hear.write(frame)
-    s.close()
-    print('Audio closed')
-    os._exit(1)
+
 
 
 
