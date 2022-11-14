@@ -31,10 +31,9 @@ def audio_stream_UDP():
 					input=True,
 					frames_per_buffer=CHUNK)			
 
-    message = b'Hello'
-    s.sendto(message,(host_ip,port))
-    answer,_ = s.recvfrom(BUFF_SIZE)
-    print(answer.decode())
+
+    # answer,_ = s.recvfrom(BUFF_SIZE)
+    # print(answer.decode())
     q = queue.Queue(maxsize=10000)
 
 
@@ -55,24 +54,41 @@ def audio_stream_UDP():
             except:
                 s.close()
                 print('Audio closed')
-                sys._exit()
+                sys.exit()
 
     def sendAudioData():
         while True:
             data = record.read(CHUNK)
-            s.sendto(data,(host_ip, port))
+            data = set_volume(data, 100)
+            try:
+                s.sendto(data,(host_ip, port))
+            except OSError:
+                sys.exit()
+  
+
+    # def send_conn_check_msg():
+    #     while True:
+    #         data = s.recvfrom(BUFF_SIZE)
+    #         try:
+    #             if data.decode() == "Still Connected?":
+    #                 s.sendto("Still Connected".encode(),(host_ip, port))
+    #         except UnicodeDecodeError:
+    #             pass
+    name = "Drogba"
+    s.sendto(name.encode(),(host_ip, port))
 
     t1 = threading.Thread(target=getAudioData, args=())
     t1.start()
     t2 = threading.Thread(target=sendAudioData, args=())
     t2.start()
+    # t3 = threading.Thread(target=send_conn_check_msg, args=())
+    # t3.start()
 
     # time.sleep(5)
 
 
     while True:
         frame = q.get()
-        frame = set_volume(frame, 200)
         hear.write(frame)
 
 
