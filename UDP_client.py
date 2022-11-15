@@ -39,9 +39,10 @@ def audio_stream_UDP():
 
     def set_volume(data, volume):
         sound_level = (volume / 100.)
-        chunk = np.fromstring(data, np.int16)
+        chunk = np.frombuffer(data, dtype = np.int16)
         chunk = chunk * sound_level
         data = chunk.astype(np.int16)
+        data = data.tobytes()      # Activate this for recieved audio
         return data
 
 
@@ -59,7 +60,6 @@ def audio_stream_UDP():
     def sendAudioData():
         while True:
             data = record.read(CHUNK)
-            data = set_volume(data, 100)
             try:
                 s.sendto(data,(host_ip, port))
             except OSError:
@@ -76,7 +76,8 @@ def audio_stream_UDP():
     #             pass
     name = "Drogba"
     s.sendto(name.encode(),(host_ip, port))
-
+    msg, _ = s.recvfrom(BUFF_SIZE)
+    print(msg.decode())
     t1 = threading.Thread(target=getAudioData, args=())
     t1.start()
     t2 = threading.Thread(target=sendAudioData, args=())
@@ -89,6 +90,7 @@ def audio_stream_UDP():
 
     while True:
         frame = q.get()
+        frame = set_volume(frame, 200)
         hear.write(frame)
 
 

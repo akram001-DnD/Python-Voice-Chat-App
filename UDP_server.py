@@ -48,37 +48,36 @@ def audio_stream_UDP():
         except ConnectionResetError:
             pass
         
+        if  isinstance(data,int):
+            print("it is integer")
 
         if addr not in addrs_list:
             data = data.decode()
             if data not in clients_list:
                 print(f'[GOT connection from]... {addr}, Name is: {data}')
-                s.sendto(f"Server Message: You Have been Connected".encode(),addr)   
+                s.sendto(f"Server Message: You Have been Connected: {data}".encode(),addr)   
                 addrs_list.append(addr)
                 clients_list.append(data)
             elif data in clients_list:
                 index = clients_list.index(data)
                 clients_list.pop(index)
                 addrs_list.pop(index)
-                # del clients_list[index]
-                # del addrs_list[index]
                 print(f'[GOT connection from]... {addr} Name is: {data}')
-                s.sendto(f"Server Message: You Have been Connected".encode(),addr)   
+                s.sendto(f"Server Message: You Have been Connected: {data}".encode(),addr)   
                 addrs_list.append(addr)
                 clients_list.append(data)
             print(clients_list,"   ",addrs_list)
             continue
 
         if data is not None:
+            # s.sendto(data,addr)  #* This is just to test the sound
+            # time.sleep(0.1)
             for client in addrs_list:
                 if addr != client:
                     s.sendto(data,client)
                     time.sleep(0.1) # Here you can adjust it according to how fast you want to send data keep it > 0
+                    
 
-
-                # print(f"Client {client} Disconnected!")
-                # clients_list.remove(client)
-                # break
 
 t1 = threading.Thread(target=audio_stream_UDP, args=())
 t1.start()
