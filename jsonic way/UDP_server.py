@@ -16,7 +16,7 @@ IDs_list = []
 #format example
 #PlayerInfo = {"PlayerId":PlayerId,"type":"voiceMessage", ,"ClientAddress","14.45.117.204", "TargetIds":[1,2,7],"Volume":[0.5,0.2,1.0] }
 #PlayersInfo ={"PlayerId",PlayerInfo}
-PlayersInfo = {}
+# PlayersInfo = {}
 # For details visit: www.pyshine.com
 
 
@@ -63,21 +63,21 @@ def check_connectivity():
 
 
 
-def ReceivePlayersInfo():
-    BUFF_SIZE = 65536
-    ws = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-    ws.setsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF,BUFF_SIZE)
-    ws.bind((host_ip, (UDP_port)))
-    print('UDP server listening at client infos :: ',(host_ip, (UDP_port)))
-    while True:
-        PlayerInfo = {}
-        data = None
-        try:
-            data, addr = ws.recvfrom(BUFF_SIZE)
-            #TODO: convert bytes to json
-            PlayersInfo[PlayerInfo.PlayerId]=PlayerInfo
-        except ConnectionResetError:
-            pass
+# def ReceivePlayersInfo():
+#     BUFF_SIZE = 65536
+#     ws = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+#     ws.setsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF,BUFF_SIZE)
+#     ws.bind((host_ip, (UDP_port)))
+#     print('UDP server listening at client infos :: ',(host_ip, (UDP_port)))
+#     while True:
+#         PlayerInfo = {}
+#         data = None
+#         try:
+#             data, addr = ws.recvfrom(BUFF_SIZE)
+#             #TODO: convert bytes to json
+#             PlayersInfo[PlayerInfo.PlayerId]=PlayerInfo
+#         except ConnectionResetError:
+#             pass
 
 def audio_stream_UDP():
     BUFF_SIZE = 65536
@@ -130,12 +130,13 @@ def audio_stream_UDP():
 
         #TODO: define SendTo to sent voice to
         #first find the player id  of this audio sender
-
+        if data is None:
+            continue
         data = pickle.loads(data)
         playerInfo, msg = data
-        type = playerInfo.type
+        type = playerInfo['type']
         if type == "voiceMsg":
-            targetIDs = playerInfo.Target_IDs
+            targetIDs = playerInfo['TargetIDs']
             for recepient in targetIDs:
                 ID, vol = recepient
                 if ID in IDs_list:
@@ -164,6 +165,7 @@ def audio_stream_UDP():
 
 t1 = threading.Thread(target=audio_stream_UDP, args=())
 t1.start()
-
-t2 = threading.Thread(target=check_connectivity, args=())
-t2.start()
+time.sleep(0.2)
+check_connectivity()
+# t2 = threading.Thread(target=check_connectivity, args=())
+# t2.start()

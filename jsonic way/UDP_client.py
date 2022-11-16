@@ -14,17 +14,16 @@ import pickle
 #send PlayerInfo to the server
 
 ######################
-
-host_name = socket.gethostname()
-# host_ip="64.44.97.254"
+# For details visit: www.pyshine.com  
 UDP_port = 9633
 TCP_port = 9632
-ID = "Drogba"
-# For details visit: www.pyshine.com  
-target_IDs = [["Roberto", 0.7]]
-PlayerInfo = {"ID":ID, "type": "voiceMsg","HostAddress":"64.44.97.254","TargetIDs":target_IDs }
-host_ip = PlayerInfo.HostAddress
 
+ID = "Drogba"
+target_IDs = [["Roberto", 0.7]]
+
+PlayerInfo = {"ID":ID, "type": "voiceMsg","HostAddress":"64.44.97.254","TargetIDs":target_IDs }
+# host_ip = PlayerInfo["HostAddress"]
+host_ip="192.168.1.41"
 
 def audio_stream_UDP():
     BUFF_SIZE = 65536
@@ -89,7 +88,7 @@ def audio_stream_UDP():
 
     def sendAudioData():
         while True:
-            if PlayerInfo.type == "voiceMsg":
+            if PlayerInfo['type'] == "voiceMsg":
                 voice = record.read(CHUNK)
                 data = [PlayerInfo, voice]
                 data=pickle.dumps(data)
@@ -126,7 +125,7 @@ def audio_stream_UDP():
         frame = pickle.loads(frame)
         msg, vol, type = frame
         if type == "voiceMsg":
-            voice = set_volume(frame, vol)
+            voice = set_volume(msg, vol)
             hear.write(voice)
 
 
