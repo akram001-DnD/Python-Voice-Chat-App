@@ -5,16 +5,25 @@ import socket
 import threading,  pyaudio, time, queue
 import sys
 import numpy as np
+import pickle
+########################
+#Jotar
 
-host_name = socket.gethostname()
-host_ip = '192.168.1.41'
-# host_ip="64.44.97.254"
+####### wait for unreal client to give us the server info
+#PlayerInfo = {"PlayerId":PlayerId,"type":"voiceMessage", ,"HostAddress","64.44.97.254", "TargetIds":[1,2,7],"Volume":[0.5,0.2,1.0] }
+#send PlayerInfo to the server
+
+######################
+# For details visit: www.pyshine.com  
 UDP_port = 9633
 TCP_port = 9632
-ID = "bbb"
-# For details visit: www.pyshine.com
 
+ID = "Drogba"
+target_IDs = [["Roberto", 0.7]]
 
+PlayerInfo = {"ID":ID, "type": "voiceMsg","HostAddress":"64.44.97.254","TargetIDs":target_IDs }
+# host_ip = PlayerInfo["HostAddress"]
+host_ip="192.168.1.41"
 
 def audio_stream_UDP():
     BUFF_SIZE = 65536
@@ -59,9 +68,8 @@ def audio_stream_UDP():
 
 
     def set_volume(data, volume):
-        sound_level = (volume / 100.)
         chunk = np.frombuffer(data, dtype = np.int16)
-        chunk = chunk * sound_level
+        chunk = chunk * volume
         data = chunk.astype(np.int16)
         data = data.tobytes()      # Activate this for recieved audio
         return data
@@ -80,12 +88,15 @@ def audio_stream_UDP():
 
     def sendAudioData():
         while True:
-            data = record.read(CHUNK)
-            try:
-                s.sendto(data,(host_ip, UDP_port))
-            except OSError:
-                sys.exit()
-  
+            if PlayerInfo['type'] == "voiceMsg":
+                voice = record.read(CHUNK)
+                data = [PlayerInfo, voice]
+                data=pickle.dumps(data)
+                try:
+                    s.sendto(data,(host_ip, UDP_port))
+                except OSError:
+                    sys.exit()
+    
 
     # def send_conn_check_msg():
     #     while True:
@@ -111,13 +122,15 @@ def audio_stream_UDP():
 
     while True:
         frame = q.get()
-        frame = set_volume(frame, 200)
-        hear.write(frame)
+        frame = pickle.loads(frame)
+        msg, vol, type = frame
+        if type == "voiceMsg":
+            voice = set_volume(msg, vol)
+            hear.write(voice)
 
 
 
 
 t1 = threading.Thread(target=audio_stream_UDP, args=())
 t1.start()
-
 

@@ -1,6 +1,6 @@
 # This is server code to send video and audio frames over UDP
 
-import socket, threading, time
+import socket, threading, time, pickle
 
 host_name = socket.gethostname()
 host_ip = '0.0.0.0'#  socket.gethostbyname(host_name)
@@ -10,6 +10,13 @@ TCP_port = 9632
 clients_list = []
 addrs_list = []
 IDs_list = []
+##################################
+#receive from clients
+#Jotar
+#format example
+#PlayerInfo = {"PlayerId":PlayerId,"type":"voiceMessage", ,"ClientAddress","14.45.117.204", "TargetIds":[1,2,7],"Volume":[0.5,0.2,1.0] }
+#PlayersInfo ={"PlayerId",PlayerInfo}
+# PlayersInfo = {}
 # For details visit: www.pyshine.com
 
 
@@ -56,6 +63,22 @@ def check_connectivity():
 
 
 
+# def ReceivePlayersInfo():
+#     BUFF_SIZE = 65536
+#     ws = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+#     ws.setsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF,BUFF_SIZE)
+#     ws.bind((host_ip, (UDP_port)))
+#     print('UDP server listening at client infos :: ',(host_ip, (UDP_port)))
+#     while True:
+#         PlayerInfo = {}
+#         data = None
+#         try:
+#             data, addr = ws.recvfrom(BUFF_SIZE)
+#             #TODO: convert bytes to json
+#             PlayersInfo[PlayerInfo.PlayerId]=PlayerInfo
+#         except ConnectionResetError:
+#             pass
+
 def audio_stream_UDP():
     BUFF_SIZE = 65536
     #! Initializing UDP server
@@ -85,41 +108,64 @@ def audio_stream_UDP():
             data, addr = s.recvfrom(BUFF_SIZE)
         except ConnectionResetError:
             pass
-        
-        if  isinstance(data,int):
-            print("it is integer")
 
         if addr not in addrs_list:
-            data = data.decode()
-            if data not in IDs_list:
-                print(f'[GOT connection from]... {addr}, Name is: {data}')
-                s.sendto(f"Server Message: You Have been Connected: {data}".encode(),addr)   
+            playerID = data.decode()
+            if playerID not in IDs_list:
+                print(f'[GOT connection from]... {addr}, Name is: {playerID}')
+                s.sendto(f"Server Message: You Have been Connected: {playerID}".encode(),addr)   
                 addrs_list.append(addr)
-                IDs_list.append(data)
-            elif data in IDs_list:
-                index = IDs_list.index(data)
+                IDs_list.append(playerID)
+            elif playerID in IDs_list:
+                index = IDs_list.index(playerID)
                 IDs_list.pop(index)
                 addrs_list.pop(index)
-                print(f'[GOT connection from]... {addr} Name is: {data}')
-                s.sendto(f"Server Message: You Have been Connected: {data}".encode(),addr)   
+                print(f'[GOT connection from]... {addr} Name is: {playerID}')
+                s.sendto(f"Server Message: You Have been Connected: {playerID}".encode(),addr)   
                 addrs_list.append(addr)
-                IDs_list.append(data)
+                IDs_list.append(playerID)
             print(IDs_list,"   ",addrs_list)
             print(clients_list)
             continue
 
-        if data is not None:
-            # s.sendto(data,addr)  #* This is just to test the sound
-            # time.sleep(0.1)
-            for client in addrs_list:
-                if addr != client:
-                    s.sendto(data,client)
-                    time.sleep(0.1) # Here you can adjust it according to how fast you want to send data keep it > 0
+        #TODO: define SendTo to sent voice to
+        #first find the player id  of this audio sender
+        if data is None:
+            continue
+        data = pickle.loads(data)
+        playerInfo, msg = data
+        type = playerInfo['type']
+        if type == "voiceMsg":
+            targetIDs = playerInfo['TargetIDs']
+            for recepient in targetIDs:
+                ID, vol = recepient
+                if ID in IDs_list:
+                    index = IDs_list.index(ID)
+                    destination = addrs_list[index]
+                    frame = [msg, vol, type]
+                    frame = pickle.dumps(frame)
+                    s.sendto(frame, destination)
+            time.sleep(0.1)
+
+            
+        # for Info in PlayersInfo:
+        #     if Info.ClientAddress == addr:
+        #         PlayerInfo=Info
+        # IdsSendTo=[]
+        # AddrSendTo=[]
+        # IdsSendTo=PlayerInfo.TargetIds
+        # if    PlayerInfo !=None:     
+        #         for Info in PlayersInfo:
+        #             if  Info.PlayerId in IdsSendTo:
+        #                 AddrSendTo.append(Info.ClientAddress)
+
+
                     
 
 
 t1 = threading.Thread(target=audio_stream_UDP, args=())
 t1.start()
-
-t2 = threading.Thread(target=check_connectivity, args=())
-t2.start()
+time.sleep(0.2)
+check_connectivity()
+# t2 = threading.Thread(target=check_connectivity, args=())
+# t2.start()
