@@ -91,11 +91,11 @@ def ReceiveUDPFromUnreal():
         PlayerInfo=PlayerInfo
 
 def audio_stream_UDP():
-    target_IDs = [{"target_id": "1", "volume": 2}]  
+    target_IDs = [{"target_id": "2", "volume": 2}]  
     PlayerInfo = {}
-    PlayerInfo = {"player_id":"1", "type": "global_voice","recording":True,"HostAddress":"64.44.97.254","TargetIDs":target_IDs }
+    PlayerInfo = {"player_id":"2", "type": "global_voice","recording":True,"HostAddress":"64.44.97.254","TargetIDs":target_IDs }
     # PlayerInfo = {"player_id":1, "type": "p2p_call","recording":False,"HostAddress":"64.44.97.254","TargetIDs":target_IDs, "p2p_dest":{"addr":"192.168.1.41","accepted?":False} }
-    host_ip="64.44.97.254"
+    host_ip="192.168.1.41"
     UDP_port = 9009
     BUFF_SIZE = 65536
     
@@ -204,9 +204,9 @@ def audio_stream_UDP():
 # t3 = threading.Thread(target=ReceiveUDPFromUnreal, args=())
 # t3.start()
 
-# audio_stream_UDP()
-t1 = threading.Thread(target=audio_stream_UDP, args=())
-t1.start()
+audio_stream_UDP()
+# t1 = threading.Thread(target=audio_stream_UDP, args=())
+# t1.start()
 
 
 

@@ -15,7 +15,7 @@ IDs_list = []
 
 
 def audio_stream_UDP():
-    playersInfo={}
+    all_players={}
     BUFF_SIZE = 65536
 
     #! Initializing UDP server
@@ -45,15 +45,17 @@ def audio_stream_UDP():
         #? This is essantial if a client is reconnecting to the server to make sure he is not registred to the list more than one time
         #* CHECKING IF THE CLIENT IS ALREADY REGISTRED IN OUR LIST
         sender_id = playerInfo['player_id']
-        if sender_id not in playersInfo.keys():
+        if sender_id not in all_players.keys():
             playerInfo["IpAddress"] = addr
-            playersInfo[sender_id] = playerInfo
+            all_players[sender_id] = playerInfo
             print(f'Client {sender_id} :: {addr} Have Been Connected!')
+            print("if Section :: ",all_players)
 
-        elif sender_id in playersInfo.keys() and addr != playersInfo[sender_id]["IpAddress"]:
-            playerInfo[sender_id]['IpAddress']=addr
+
+        elif sender_id in all_players.keys() and addr != all_players[sender_id]["IpAddress"]:
+            all_players[sender_id]['IpAddress']=addr
             print(f'Client {sender_id} :: {addr} Have Reconnected!')
-
+            print("elif Section :: ",all_players)
 
         type = playerInfo['type']
         if type == "global_voice":
@@ -62,9 +64,9 @@ def audio_stream_UDP():
             for PlayerTarget in targetsIDs:   # PlayerTarget JSON
                 target_id = PlayerTarget['target_id']
 
-                if target_id in list(playersInfo.keys()): 
+                if target_id in list(all_players.keys()): 
                     volume = PlayerTarget['volume']
-                    PlayerTargetAddress= playersInfo[target_id]['IpAddress'] #! "addr" is going to send, and "PlayerTargetAddress" is going to recieve
+                    PlayerTargetAddress= all_players[target_id]['IpAddress'] #! "addr" is going to send, and "PlayerTargetAddress" is going to recieve
 
                     # Initilizing Sender INFO as JSON to send to the client
                     senderInfo = {}
