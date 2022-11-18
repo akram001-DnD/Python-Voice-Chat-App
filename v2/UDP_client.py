@@ -97,7 +97,7 @@ def audio_stream_UDP():
     # PlayerInfo = {"player_id":1, "type": "p2p_call","recording":False,"HostAddress":"64.44.97.254","TargetIDs":target_IDs, "p2p_dest":{"addr":"192.168.1.41","accepted?":False} }
     host_ip="192.168.1.41"
     # host_ip="64.44.97.254"
-    UDP_port = 9009
+    UDP_port = 9010
     BUFF_SIZE = 65536
     
     #! Initializing UDP Connection
@@ -106,7 +106,8 @@ def audio_stream_UDP():
     s.setsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF,BUFF_SIZE)
  
     # s.sendto("connected".encode(),(host_ip, UDP_port))
-    s.connect((host_ip, UDP_port))
+    # s.connect((host_ip, UDP_port))
+    # s.sendto("sdsd".encode(),(host_ip, UDP_port) )
     print(f"Connected to server {host_ip}:{UDP_port}")
 
     p = pyaudio.PyAudio()
@@ -131,6 +132,7 @@ def audio_stream_UDP():
         data = data.tobytes()      # Activate this for recieved audio
         return data
 
+    s.sendto(pickle.dumps([PlayerInfo,"hello"]), (host_ip, UDP_port))
     def sendAudioData():
         while True: 
             type = PlayerInfo['type']

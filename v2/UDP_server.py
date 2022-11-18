@@ -5,7 +5,7 @@ import socket, threading, time, pickle
 host_name = socket.gethostname()
 host_ip = '0.0.0.0'#  socket.gethostbyname(host_name)
 print(host_ip)
-UDP_port = 9009
+UDP_port = 9010
 TCP_port = 9632
 clients_list = []
 addrs_list = []
@@ -29,17 +29,18 @@ def audio_stream_UDP():
 
     while True:
         data = None
+        playerInfo = None
+        compressed_voice = None
         try:
             data, addr = s.recvfrom(BUFF_SIZE)
         except ConnectionResetError:
             continue
-
+        
         if data is None:
             continue
-        #fill players Info data
-        playerInfo = {}
+        
         playerInfo, compressed_voice = pickle.loads(data)
-        if compressed_voice is None: 
+        if playerInfo is None: 
             continue
         
         #! DO NOT TOUCH THIS AGAIN
@@ -50,13 +51,14 @@ def audio_stream_UDP():
             playerInfo["IpAddress"] = addr
             all_players[sender_id] = playerInfo
             print(f'Client {sender_id} :: {addr} Have Been Connected!')
-            print("if Section :: ",all_players)
-
-
+            # print("if Section :: ",all_players)
+            print(compressed_voice)
+            continue
         elif sender_id in all_players.keys() and addr != all_players[sender_id]["IpAddress"]:
             all_players[sender_id]['IpAddress']=addr
             print(f'Client {sender_id} :: {addr} Have Reconnected!')
-            print("elif Section :: ",all_players)
+            # print("elif Section :: ",all_players)
+            continue
 
         type = playerInfo['type']
         if type == "global_voice":
