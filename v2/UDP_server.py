@@ -22,6 +22,7 @@ def audio_stream_UDP():
     s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
     s.setsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF,BUFF_SIZE)
     s.bind((host_ip, (UDP_port)))
+    
     print('UDP server listening at',(host_ip, (UDP_port)))
 
 
@@ -37,8 +38,8 @@ def audio_stream_UDP():
             continue
         #fill players Info data
         playerInfo = {}
-        playerInfo, voice = pickle.loads(data)
-        if voice is None: 
+        playerInfo, compressed_voice = pickle.loads(data)
+        if compressed_voice is None: 
             continue
         
         #! DO NOT TOUCH THIS AGAIN
@@ -74,7 +75,7 @@ def audio_stream_UDP():
                     senderInfo['volume'] = volume
                     senderInfo['type'] = type
                     
-                    frame = [senderInfo, voice]
+                    frame = [senderInfo, compressed_voice]
                     frame = pickle.dumps(frame)
                     s.sendto(frame, PlayerTargetAddress)
             time.sleep(0.1)

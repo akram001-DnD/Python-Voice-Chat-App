@@ -7,8 +7,8 @@ import sys
 import numpy as np
 import pickle
 from p2p_Library import AudioReceiver, AudioSender
-
-
+from pympler import asizeof
+import zlib
 
 
 ########################
@@ -96,6 +96,7 @@ def audio_stream_UDP():
     PlayerInfo = {"player_id":"2", "type": "global_voice","recording":True,"HostAddress":"64.44.97.254","TargetIDs":target_IDs }
     # PlayerInfo = {"player_id":1, "type": "p2p_call","recording":False,"HostAddress":"64.44.97.254","TargetIDs":target_IDs, "p2p_dest":{"addr":"192.168.1.41","accepted?":False} }
     host_ip="192.168.1.41"
+    # host_ip="64.44.97.254"
     UDP_port = 9009
     BUFF_SIZE = 65536
     
@@ -109,7 +110,7 @@ def audio_stream_UDP():
     print(f"Connected to server {host_ip}:{UDP_port}")
 
     p = pyaudio.PyAudio()
-    CHUNK = 10*1024
+    CHUNK = 5*1024
     hear = p.open(format=p.get_format_from_width(2),
 					channels=2,
 					rate=44100,
@@ -140,8 +141,16 @@ def audio_stream_UDP():
                 type = PlayerInfo['type']
                 if micOn:
                     voice = record.read(CHUNK)
-                    data =[PlayerInfo, voice]
+
+                    # compress = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -15)
+                    # compressed_voice = compress.compress(voice)
+                    # compressed_voice += compress.flush()
+
+                    compressed_voice = zlib.compress(voice,2)
+                    data =[PlayerInfo, compressed_voice]
                     data=pickle.dumps(data)
+                    
+                    print("playerInfo size::", sys.getsizeof(data))
                     s.sendto(data,(host_ip, UDP_port))
 
                 
@@ -177,10 +186,11 @@ def audio_stream_UDP():
                 continue
             #fill sender Info data
             SenderInfo = {}
-            SenderInfo, voice = pickle.loads(data)
-            if voice is None:
+            SenderInfo, compressed_voice = pickle.loads(data)
+            if compressed_voice is None:
                 continue
 
+            voice = zlib.decompress(compressed_voice)
             sender_id = SenderInfo['sender_id']
             volume = SenderInfo['volume']
             type = SenderInfo['type']
