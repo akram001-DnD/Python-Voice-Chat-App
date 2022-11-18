@@ -5,10 +5,10 @@ import time
 import sys
 stop_thread = threading.Event()
 host_name = socket.gethostname()
-# host_ip="64.44.97.254"
-host_ip = '192.168.1.41'
+host_ip="64.44.97.254"
+# host_ip = '192.168.1.41'
 port = 9001
-CHUNK = 1024
+CHUNK = 32
 rate = 44100
 format = pyaudio.paInt16
 p = pyaudio.PyAudio()
@@ -16,12 +16,11 @@ p = pyaudio.PyAudio()
 
 
 def set_volume(data, volume):
-    # Change value of list of audio chunks
-    sound_level = (volume / 100.)
-    chunk = np.fromstring(data, np.int16)
-    chunk = chunk * sound_level
-    data = chunk.astype(np.int16)
-    return data
+        chunk = np.frombuffer(data, dtype = np.int16)
+        chunk = chunk * volume
+        data = chunk.astype(np.int16)
+        data = data.tobytes()      # Activate this for recieved audio
+        return data
 
 def stop_streaming(stream):
     stream.stop_stream()
@@ -33,6 +32,7 @@ def stop_streaming(stream):
 def create_socket():
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     except socket.error as msg:
         print("Socket creation error: ", str(msg))
 
@@ -49,40 +49,13 @@ def audio_recieve():
     print("CLIENT CONNECTED TO ",host_ip)
     while True:
         try:
-            stream.write(s.recv(CHUNK))
+            voice = s.recv(CHUNK)
+            voice = set_volume(voice, 3)
+            stream.write(voice)
         except ConnectionResetError:
             print("Connection to the server was lost, Reconnecting Again...")
-            time.sleep(1)
-            main()
-            break
+            sys.exit()
 
-    # data = b""
-    # payload_size = struct.calcsize("Q")
-    # while True:
-    #     try:
-    #         while len(data) < payload_size:
-    #             packet = s.recv(CHUNK) # 4K
-    #             if not packet: break
-    #             data+=packet
-    #         packed_msg_size = data[:payload_size]
-    #         data = data[payload_size:]
-    #         msg_size = struct.unpack("Q",packed_msg_size)[0]
-    #         while len(data) < msg_size:
-    #             data += s.recv(CHUNK)
-    #         frame_data = data[:msg_size]
-    #         data  = data[msg_size:]
-    #         frame = pickle.loads(frame_data)
-    #         stream.write(frame)
-    #     except ConnectionResetError:
-    #         print("Connection to the server was lost, Reconnecting Again...")
-    #         time.sleep(3)
-    #         main()
-    #         break
-    #     except:
-    #         break
-    # s.close()
-    # print("Audio Closed")
-    # os._exit(1)
 
 
 
@@ -98,16 +71,11 @@ def audio_send():
     while True:
         if s:
             data = stream.read(CHUNK)
-            # data = set_volume(data,1500)
-            # a = pickle.dumps(data)
-            # message = struct.pack("Q",len(a))+a
             try:
                 s.send(data)
             except ConnectionResetError:
                 print("Connection to the server was lost, Reconnecting Again...")
-                time.sleep(3)
-                main()
-                break
+                sys.exit()
             
             
     

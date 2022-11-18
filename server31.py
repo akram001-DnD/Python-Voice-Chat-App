@@ -18,7 +18,7 @@ def audio_stream(conn,addr):
     while True:
         if conn:
             try:
-                data = conn.recv(1024)
+                data = conn.recv(256)
             except ConnectionResetError:
                 print("connection was lost by: ",addr)
                 conn.close()
@@ -28,7 +28,7 @@ def audio_stream(conn,addr):
                 IDs_list.pop(index)
                 break
             for i,client in enumerate(clients_list):
-                if client != conn:
+                # if client != conn:
                     try:
                         client.send(data)  
                     except:
